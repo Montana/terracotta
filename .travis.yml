@@ -1,0 +1,15 @@
+language: go
+
+go:
+  - '1.21'
+
+cache:
+  directories:
+    - $GOPATH/pkg/mod
+
+install:
+  - go mod download
+
+script:
+  - go build -v ./...
+  - go test -v ./...
