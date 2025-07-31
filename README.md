@@ -73,10 +73,8 @@ Tunnel to a remote database through a bastion host:
 ### Expose Local Service
 Make a local service available through a tunnel server:
 ```bash
-# On the server
 ./terracotta -mode server -server 9090
 
-# On the client
 ./terracotta -mode client -local 8080 -remote your-server.com -server 9090
 ```
 
@@ -94,13 +92,10 @@ go build -o terracotta
 
 ### Cross-compilation
 ```bash
-# Linux
 GOOS=linux GOARCH=amd64 go build -o terracotta-linux
 
-# Windows
 GOOS=windows GOARCH=amd64 go build -o terracotta.exe
 
-# macOS
 GOOS=darwin GOARCH=amd64 go build -o terracotta-macos
 ```
 
