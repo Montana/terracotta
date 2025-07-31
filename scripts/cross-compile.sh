@@ -1,5 +1,4 @@
 #!/bin/bash
-# scripts/cross-compile.sh - Cross-compilation script
 set -e
 BINARY_NAME="terracotta"
 VERSION="1.0.0"
