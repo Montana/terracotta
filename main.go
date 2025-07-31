@@ -8,8 +8,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -52,12 +50,12 @@ type TunnelClient struct {
 }
 
 type Stats struct {
-	ConnectTime    time.Time
-	BytesSent      int64
-	BytesReceived  int64
-	ActiveConns    int64
-	TotalConns     int64
-	mu             sync.RWMutex
+	ConnectTime   time.Time
+	BytesSent     int64
+	BytesReceived int64
+	ActiveConns   int64
+	TotalConns    int64
+	mu            sync.RWMutex
 }
 
 func (s *Stats) AddConnection() {
@@ -88,10 +86,8 @@ func (s *Stats) GetStats() (int64, int64, int64, int64) {
 
 func main() {
 	config := parseFlags()
-	
 	fmt.Printf(banner, version)
 	fmt.Printf("Starting Terracotta in %s mode...\n\n", config.Mode)
-
 	switch config.Mode {
 	case "server":
 		runServer(config)
@@ -106,29 +102,23 @@ func main() {
 
 func parseFlags() *Config {
 	config := &Config{}
-	
 	flag.StringVar(&config.Mode, "mode", "local", "Mode: server, client, or local")
 	flag.IntVar(&config.LocalPort, "local", 8080, "Local port to listen on")
 	flag.StringVar(&config.RemoteAddr, "remote", "localhost", "Remote address to connect to")
 	flag.IntVar(&config.RemotePort, "port", 80, "Remote port to connect to")
 	flag.IntVar(&config.ServerPort, "server", 9090, "Server port for tunneling")
 	flag.BoolVar(&config.Verbose, "verbose", false, "Verbose logging")
-	
 	showHelp := flag.Bool("help", false, "Show help")
 	showVersion := flag.Bool("version", false, "Show version")
-	
 	flag.Parse()
-	
 	if *showVersion {
 		fmt.Printf("Terracotta v%s\n", version)
 		os.Exit(0)
 	}
-	
 	if *showHelp {
 		printHelp()
 		os.Exit(0)
 	}
-	
 	return config
 }
 
@@ -161,28 +151,22 @@ Examples:
   
   # Run tunnel client
   terracotta -mode client -local 8080 -remote tunnelserver.com -server 9090
-`)
+  `)
 }
 
 func runLocalTunnel(config *Config) {
 	stats := &Stats{ConnectTime: time.Now()}
-	
 	localAddr := fmt.Sprintf(":%d", config.LocalPort)
 	remoteAddr := fmt.Sprintf("%s:%d", config.RemoteAddr, config.RemotePort)
-	
 	listener, err := net.Listen("tcp", localAddr)
 	if err != nil {
 		log.Fatalf("Failed to listen on %s: %v", localAddr, err)
 	}
 	defer listener.Close()
-	
 	fmt.Printf("Terracotta tunnel active\n")
 	fmt.Printf("Local: %s -> Remote: %s\n", localAddr, remoteAddr)
 	fmt.Printf("Forwarding traffic...\n\n")
-	
 	go printStats(stats, config.Verbose)
-	
-	// Handle graceful shutdown
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -191,7 +175,6 @@ func runLocalTunnel(config *Config) {
 		listener.Close()
 		os.Exit(0)
 	}()
-	
 	for {
 		clientConn, err := listener.Accept()
 		if err != nil {
@@ -200,7 +183,6 @@ func runLocalTunnel(config *Config) {
 			}
 			continue
 		}
-		
 		stats.AddConnection()
 		go handleLocalConnection(clientConn, remoteAddr, stats, config.Verbose)
 	}
@@ -211,12 +193,9 @@ func handleLocalConnection(clientConn net.Conn, remoteAddr string, stats *Stats,
 		clientConn.Close()
 		stats.RemoveConnection()
 	}()
-	
 	if verbose {
 		log.Printf("New connection from %s", clientConn.RemoteAddr())
 	}
-	
-	// Connect to remote server
 	remoteConn, err := net.DialTimeout("tcp", remoteAddr, 10*time.Second)
 	if err != nil {
 		if verbose {
@@ -225,11 +204,7 @@ func handleLocalConnection(clientConn net.Conn, remoteAddr string, stats *Stats,
 		return
 	}
 	defer remoteConn.Close()
-	
-	// Start bidirectional forwarding
 	done := make(chan struct{}, 2)
-	
-	// Client -> Remote
 	go func() {
 		defer func() { done <- struct{}{} }()
 		sent, _ := io.Copy(remoteConn, clientConn)
@@ -238,8 +213,6 @@ func handleLocalConnection(clientConn net.Conn, remoteAddr string, stats *Stats,
 			log.Printf("Client->Remote finished: %d bytes", sent)
 		}
 	}()
-	
-	// Remote -> Client
 	go func() {
 		defer func() { done <- struct{}{} }()
 		received, _ := io.Copy(clientConn, remoteConn)
@@ -248,8 +221,6 @@ func handleLocalConnection(clientConn net.Conn, remoteAddr string, stats *Stats,
 			log.Printf("Remote->Client finished: %d bytes", received)
 		}
 	}()
-	
-	// Wait for either direction to finish
 	<-done
 }
 
@@ -259,23 +230,17 @@ func runServer(config *Config) {
 		clients: make(map[string]net.Conn),
 		stats:   &Stats{ConnectTime: time.Now()},
 	}
-	
 	serverAddr := fmt.Sprintf(":%d", config.ServerPort)
 	listener, err := net.Listen("tcp", serverAddr)
 	if err != nil {
 		log.Fatalf("Failed to start server on %s: %v", serverAddr, err)
 	}
 	defer listener.Close()
-	
 	server.listener = listener
-	
 	fmt.Printf("Terracotta server started\n")
 	fmt.Printf("Listening on: %s\n", serverAddr)
 	fmt.Printf("Waiting for clients...\n\n")
-	
 	go printStats(server.stats, config.Verbose)
-	
-	// Handle graceful shutdown
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -284,7 +249,6 @@ func runServer(config *Config) {
 		server.shutdown()
 		os.Exit(0)
 	}()
-	
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -293,7 +257,6 @@ func runServer(config *Config) {
 			}
 			continue
 		}
-		
 		server.stats.AddConnection()
 		go server.handleClient(conn)
 	}
@@ -304,23 +267,18 @@ func (s *TunnelServer) handleClient(conn net.Conn) {
 		conn.Close()
 		s.stats.RemoveConnection()
 	}()
-	
 	clientAddr := conn.RemoteAddr().String()
 	if s.config.Verbose {
 		log.Printf("New client connected: %s", clientAddr)
 	}
-	
 	s.clientsMux.Lock()
 	s.clients[clientAddr] = conn
 	s.clientsMux.Unlock()
-	
 	defer func() {
 		s.clientsMux.Lock()
 		delete(s.clients, clientAddr)
 		s.clientsMux.Unlock()
 	}()
-	
-	// Keep connection alive and handle data
 	buffer := make([]byte, 4096)
 	for {
 		n, err := conn.Read(buffer)
@@ -330,10 +288,7 @@ func (s *TunnelServer) handleClient(conn net.Conn) {
 			}
 			break
 		}
-		
 		s.stats.AddBytes(0, int64(n))
-		
-		// Echo back for now (implement actual tunneling logic here)
 		conn.Write(buffer[:n])
 		s.stats.AddBytes(int64(n), 0)
 	}
@@ -342,14 +297,12 @@ func (s *TunnelServer) handleClient(conn net.Conn) {
 func (s *TunnelServer) shutdown() {
 	s.clientsMux.Lock()
 	defer s.clientsMux.Unlock()
-	
 	for addr, conn := range s.clients {
 		if s.config.Verbose {
 			log.Printf("Closing connection to %s", addr)
 		}
 		conn.Close()
 	}
-	
 	if s.listener != nil {
 		s.listener.Close()
 	}
@@ -360,28 +313,20 @@ func runClient(config *Config) {
 		config: config,
 		stats:  &Stats{ConnectTime: time.Now()},
 	}
-	
 	serverAddr := fmt.Sprintf("%s:%d", config.RemoteAddr, config.ServerPort)
 	localAddr := fmt.Sprintf(":%d", config.LocalPort)
-	
 	fmt.Printf("Terracotta client starting\n")
 	fmt.Printf("Server: %s\n", serverAddr)
 	fmt.Printf("Local: %s\n", localAddr)
 	fmt.Printf("Establishing tunnel...\n\n")
-	
-	// Connect to tunnel server
 	conn, err := net.DialTimeout("tcp", serverAddr, 10*time.Second)
 	if err != nil {
 		log.Fatalf("Failed to connect to server %s: %v", serverAddr, err)
 	}
 	defer conn.Close()
-	
 	client.conn = conn
 	fmt.Printf("Connected to tunnel server\n")
-	
 	go printStats(client.stats, config.Verbose)
-	
-	// Handle graceful shutdown
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -390,16 +335,12 @@ func runClient(config *Config) {
 		conn.Close()
 		os.Exit(0)
 	}()
-	
-	// Start local listener for incoming connections
 	listener, err := net.Listen("tcp", localAddr)
 	if err != nil {
 		log.Fatalf("Failed to listen on %s: %v", localAddr, err)
 	}
 	defer listener.Close()
-	
 	fmt.Printf("Tunnel established! Local port %d is now forwarded\n", config.LocalPort)
-	
 	for {
 		localConn, err := listener.Accept()
 		if err != nil {
@@ -408,7 +349,6 @@ func runClient(config *Config) {
 			}
 			continue
 		}
-		
 		client.stats.AddConnection()
 		go client.handleLocalConnection(localConn)
 	}
@@ -419,39 +359,29 @@ func (c *TunnelClient) handleLocalConnection(localConn net.Conn) {
 		localConn.Close()
 		c.stats.RemoveConnection()
 	}()
-	
 	if c.config.Verbose {
 		log.Printf("New local connection from %s", localConn.RemoteAddr())
 	}
-	
-	// Forward data between local connection and tunnel server
 	done := make(chan struct{}, 2)
-	
-	// Local -> Server
 	go func() {
 		defer func() { done <- struct{}{} }()
 		sent, _ := io.Copy(c.conn, localConn)
 		c.stats.AddBytes(sent, 0)
 	}()
-	
-	// Server -> Local
 	go func() {
 		defer func() { done <- struct{}{} }()
 		received, _ := io.Copy(localConn, c.conn)
 		c.stats.AddBytes(0, received)
 	}()
-	
 	<-done
 }
 
 func printStats(stats *Stats, verbose bool) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
-	
 	for range ticker.C {
 		active, total, sent, received := stats.GetStats()
 		uptime := time.Since(stats.ConnectTime).Round(time.Second)
-		
 		if verbose || active > 0 {
 			fmt.Printf("Stats - Active: %d, Total: %d, Sent: %s, Received: %s, Uptime: %s\n",
 				active, total, formatBytes(sent), formatBytes(received), uptime)
