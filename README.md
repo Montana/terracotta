@@ -4,7 +4,7 @@ terracotta is a lightweight server tunneling program written in Go that i made f
 
 <img width="442" height="119" alt="Screenshot 2025-07-31 at 2 13 49 PM" src="https://github.com/user-attachments/assets/ad985dfa-685e-4483-aed1-faa1e1c2b436" />
 
-[![Go Version](https://img.shields.io/badge/go-1.21%2B-blue)](https://golang.org/dl/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<br>[![Go Version](https://img.shields.io/badge/go-1.21%2B-blue)](https://golang.org/dl/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Build Status](https://app.travis-ci.com/Montana/terracotta.svg?token=U865GtC2ptqX3Ezf3Fzb&branch=master)](https://app.travis-ci.com/Montana/terracotta)</br>
 
 ---
 
