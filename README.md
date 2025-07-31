@@ -1,32 +1,12 @@
-# Terracotta
+# terracotta
 
-Terracotta is a lightweight, high-performance server tunneling program written in Go. It enables secure, reliable TCP port forwarding and tunneling with a simple command-line interface. Originally built for personal use, it's now open for everyone.
+terracotta is a lightweight server tunneling program written in Go that i made for myself now i'm publishing it
+
+<img width="442" height="119" alt="Screenshot 2025-07-31 at 2 13 49 PM" src="https://github.com/user-attachments/assets/ad985dfa-685e-4483-aed1-faa1e1c2b436" />
 
 [![Go Version](https://img.shields.io/badge/go-1.21%2B-blue)](https://golang.org/dl/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
-
-## Why Terracotta?
-
-- **Lightweight:** Minimal dependencies and fast startup.
-- **Flexible:** Supports direct forwarding, tunnel server, and tunnel client modes.
-- **Insightful:** Real-time statistics for connections, data transfer, and uptime.
-- **Concurrent:** Efficiently handles multiple connections with Go's goroutines.
-- **User-Friendly:** Simple, intuitive CLI and easy configuration.
-
----
-
-## Features
-
-- Direct port forwarding, tunnel server, and tunnel client modes
-- Real-time statistics and monitoring
-- Secure, reliable TCP tunneling
-- High performance with concurrent connection handling
-- Easy installation and cross-compilation
-
----
-
-## Quick Start
 
 ### Installation
 
